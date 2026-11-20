@@ -19,6 +19,7 @@ export function AdminPhones() {
   const [confirmId, setConfirmId] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [imeiText, setImeiText] = useState("");
   const [reservedImeis, setReservedImeis] = useState<string[]>([]);
 
@@ -62,17 +63,23 @@ export function AdminPhones() {
     setConfirmId("");
     setImeiText("");
     setReservedImeis([]);
+    setInventoryLoaded(phone === null);
     setError("");
     if (!phone) return;
-    const response = await fetch(`/api/catalog/${phone.id}`, { cache: "no-store" });
-    const body = (await response.json().catch(() => ({}))) as Phone & { error?: string };
-    if (!response.ok) {
-      setError(body.error || "The phone could not be opened.");
-      return;
+    try {
+      const response = await fetch(`/api/catalog/${encodeURIComponent(phone.id)}`, { cache: "no-store" });
+      const body = (await response.json().catch(() => ({}))) as Phone & { error?: string };
+      if (!response.ok || !Array.isArray(body.imeis)) {
+        setError(body.error || "The phone inventory could not be loaded. Reopen the editor to retry.");
+        return;
+      }
+      setEditing(body);
+      setImeiText(body.imeis.join("\n"));
+      setReservedImeis(body.reservedImeis || []);
+      setInventoryLoaded(true);
+    } catch {
+      setError("The phone inventory could not be loaded. Reopen the editor to retry.");
     }
-    setEditing(body);
-    setImeiText((body.imeis || []).join("\n"));
-    setReservedImeis(body.reservedImeis || []);
   }
 
   function onPhoto(file: File | undefined) {
@@ -84,6 +91,7 @@ export function AdminPhones() {
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!inventoryLoaded || saving) return;
     const data = new FormData(event.currentTarget);
     const name = String(data.get("name") || "").trim();
     const short = String(data.get("short") || "").trim();
@@ -179,7 +187,7 @@ export function AdminPhones() {
                 {reservedImeis.length ? <p className="mt-2 text-sm text-ploy-text-secondary">Held for an open order: {reservedImeis.join(", ")}</p> : null}
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                <button type="submit" disabled={saving} className="inline-flex h-12 items-center rounded-full bg-ploy-background-inverse px-6 text-sm font-bold text-white disabled:opacity-60">{saving ? "Saving…" : "Save phone"}</button>
+                <button type="submit" disabled={saving || !inventoryLoaded} className="inline-flex h-12 items-center rounded-full bg-ploy-background-inverse px-6 text-sm font-bold text-white disabled:opacity-60">{saving ? "Saving…" : !inventoryLoaded ? "Loading inventory…" : "Save phone"}</button>
                 <button type="button" onClick={() => { setEditing(null); setAdding(false); }} className="inline-flex h-12 items-center rounded-full border border-ploy-border-primary px-6 text-sm font-semibold">Cancel</button>
               </div>
             </form>
