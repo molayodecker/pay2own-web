@@ -1,0 +1,9 @@
+@import "../css/site.css";
+@import "../css/extra.css";
+
+:root {
+  --font-heading: var(--font-figtree), system-ui, sans-serif;
+  --font-body: var(--font-figtree), system-ui, sans-serif;
+  --font-button: var(--font-figtree), system-ui, sans-serif;
+  --font-eyebrow: var(--font-figtree), system-ui, sans-serif;
+}
