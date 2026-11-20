@@ -9,18 +9,9 @@ const inputClass =
 
 export function AdminLogin() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const signup = mode === "signup";
-
-  function switchMode() {
-    setMode(signup ? "signin" : "signup");
-    setError("");
-  }
-
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
@@ -31,14 +22,10 @@ export function AdminLogin() {
       setError("Use a password with at least 10 characters.");
       return;
     }
-    if (signup && !name.trim()) {
-      setError("Enter your name.");
-      return;
-    }
     const response = await fetch("/api/admin/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: email.trim(), password, name: name.trim(), mode }),
+      body: JSON.stringify({ email: email.trim(), password }),
     });
     const body = (await response.json().catch(() => ({}))) as { error?: string };
     if (!response.ok) {
@@ -55,22 +42,12 @@ export function AdminLogin() {
         <Logo className="mx-auto mb-8" imageClassName="h-9 w-auto" />
         <div className="rounded-card bg-white p-7 text-ploy-text-primary md:p-9">
           <h1 className="text-balance font-heading text-2xl typography-heading md:text-3xl">
-            {signup ? "Create your admin login" : "Admin sign in"}
+            Admin sign in
           </h1>
           <p className="mt-2 text-base leading-relaxed font-body text-ploy-text-secondary typography-body md:text-lg">
-            {signup
-              ? "Only emails on the Pay2Own admin list can create a login."
-              : "Manage phones and the order queue."}
+            Sign in with an approved Pay2Own administrator account.
           </p>
           <form noValidate onSubmit={onSubmit} className="mt-7 grid gap-5">
-            {signup ? (
-              <div>
-                <label htmlFor="name" className="mb-2 block text-sm font-semibold text-ploy-text-primary">
-                  Your name
-                </label>
-                <input id="name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={inputClass} />
-              </div>
-            ) : null}
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ploy-text-primary">
                 Email
@@ -85,7 +62,7 @@ export function AdminLogin() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete={signup ? "new-password" : "current-password"}
+                autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className={inputClass}
@@ -100,12 +77,9 @@ export function AdminLogin() {
               type="submit"
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-button bg-ploy-button-secondary-background px-6 text-base font-button whitespace-nowrap text-ploy-button-secondary-text typography-button transition-colors duration-200 hover:bg-ploy-neutral-primary-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ploy-text-primary"
             >
-              {signup ? "Create login" : "Sign in"}
+              Sign in
             </button>
           </form>
-          <button type="button" onClick={switchMode} className="mt-6 text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-ploy-text-secondary">
-            {signup ? "I already have a login" : "First time? Create your admin login"}
-          </button>
         </div>
       </div>
     </main>
