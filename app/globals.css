@@ -7,3 +7,8 @@
   --font-button: var(--font-figtree), system-ui, sans-serif;
   --font-eyebrow: var(--font-figtree), system-ui, sans-serif;
 }
+
+/* The admin pages use a fixed navigation bar, without Tailwind utility generation. */
+.pt-28 {
+  padding-top: 7rem;
+}
