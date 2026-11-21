@@ -1,0 +1,79 @@
+name: Deploy to Instaclean
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: verify
+    env:
+      VERCEL_ORG_ID: team_k83EgQA7penYrYOX1GQRsnyL
+      VERCEL_PROJECT_ID: prj_P75AsTIxJTWyVrYbrZWVdR82KXFo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Vercel credentials
+        id: credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_TOKEN is not configured. Build verification ran; deployment skipped."
+          fi
+
+      - name: Install Vercel CLI
+        if: steps.credentials.outputs.configured == 'true'
+        run: npm install -g vercel@66.6.0
+
+      - name: Choose environment
+        if: steps.credentials.outputs.configured == 'true'
+        id: target
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "environment=production" >> "$GITHUB_OUTPUT"
+            echo "flags=--prod" >> "$GITHUB_OUTPUT"
+          elif [ "${GITHUB_REF}" = "refs/heads/staging" ]; then
+            echo "environment=staging" >> "$GITHUB_OUTPUT"
+            echo "flags=--environment=staging" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=preview" >> "$GITHUB_OUTPUT"
+            echo "flags=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull project settings
+        if: steps.credentials.outputs.configured == 'true'
+        run: vercel pull --yes --environment=${{ steps.target.outputs.environment }} --token=${{ secrets.VERCEL_TOKEN }} --scope instaclean-prod
+
+      - name: Build
+        if: steps.credentials.outputs.configured == 'true'
+        run: vercel build ${{ steps.target.outputs.flags }} --token=${{ secrets.VERCEL_TOKEN }} --scope instaclean-prod
+
+      - name: Deploy
+        if: steps.credentials.outputs.configured == 'true'
+        id: deploy
+        run: |
+          url="$(vercel deploy --prebuilt ${{ steps.target.outputs.flags }} --token=${{ secrets.VERCEL_TOKEN }} --scope instaclean-prod)"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+          echo "Deployed ${url}"
+
+      - name: Alias the pull request preview
+        if: steps.credentials.outputs.configured == 'true' && github.event_name == 'pull_request'
+        run: vercel alias set ${{ steps.deploy.outputs.url }} pr-${{ github.event.number }}.preview.pay2own.app --token=${{ secrets.VERCEL_TOKEN }} --scope instaclean-prod
