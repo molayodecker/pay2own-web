@@ -212,7 +212,7 @@ export function HomePage() {
             </div>
           </div>
           <div className="relative h-[46vh] min-h-[300px] w-full overflow-hidden md:h-[62vh] md:max-h-[720px]">
-            <Image src="/assets/photos/young-man-phone.jpg" alt="Young man smiling down at his phone outdoors" fill priority sizes="100vw" className="hero-settle photo-hero object-cover" />
+            <Image src="/assets/photos/woman-bed-phone.jpg" alt="Woman smiling at a phone while lying on a bed" fill priority sizes="100vw" className="hero-settle photo-hero object-cover" />
             <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ploy-background-accent-secondary to-transparent" />
           </div>
         </section>
