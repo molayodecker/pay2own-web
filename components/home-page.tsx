@@ -23,7 +23,6 @@ function fieldClass(invalid: boolean) {
 
 export function HomePage() {
   const [phones, setPhones] = useState<Phone[]>(defaultPhones);
-  const [catalogError, setCatalogError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   const [name, setName] = useState("");
@@ -44,22 +43,18 @@ export function HomePage() {
       .then(async (response) => {
         const body = (await response.json().catch(() => ({}))) as { phones?: Phone[] };
         if (ignore) return;
-        if (!response.ok || !body.phones) {
-          setCatalogError("The phone list is unavailable. Call +233 54 441 5766.");
-          return;
-        }
+        if (!response.ok || !body.phones) return;
         setPhones(body.phones);
-        setCatalogError("");
       })
-      .catch(() => {
-        if (!ignore) setCatalogError("The phone list is unavailable. Call +233 54 441 5766.");
-      });
+      .catch(() => undefined);
     return () => {
       ignore = true;
     };
   }, []);
 
   const selected = phones.find((item) => item.id === selectedId) ?? null;
+  const availableCount = phones.filter((item) => (item.available || 0) > 0).length;
+  const stockNote = phones.length > 0 && availableCount === 0 ? "The phones listed are unavailable. Call +233 54 441 5766." : "";
 
   function choose(id: string) {
     setSelectedId(id);
@@ -219,10 +214,12 @@ export function HomePage() {
 
         <section id="phones" className="bg-ploy-background-secondary text-ploy-text-primary">
           <div className="mx-auto w-full max-w-7xl px-5 py-24 sm:px-8 md:py-32 lg:px-10">
-            <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
-              <h2 className="text-balance font-heading text-4xl typography-heading md:text-5xl lg:col-span-7 lg:text-6xl">Pick the phone you want</h2>
+            <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+              <div className="lg:col-span-7">
+                <h2 className="text-balance font-heading text-4xl typography-heading md:text-5xl lg:text-6xl">Pick the phone you want</h2>
+                {stockNote ? <p className="mt-4 text-sm font-semibold leading-relaxed text-[#d12626]">{stockNote}</p> : null}
+              </div>
               <p className="text-base leading-relaxed font-body text-ploy-text-secondary typography-body md:text-lg lg:col-span-5">Choose one and it goes straight onto your order slip. We set up your payments with you at the office, before you sign anything.</p>
-              {catalogError ? <p className="text-sm font-semibold text-[#d12626] lg:col-span-12">{catalogError}</p> : null}
             </div>
             <ul className="mt-14 grid gap-y-16 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 lg:gap-x-10">
               {phones.map((item) => {
